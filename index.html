@@ -1165,6 +1165,19 @@ marker.bindPopup(`
       const pc2 = getVal('pc2');
       if (pc1 && pc2) {
         datoscatastro.referencia = pc1 + pc2;
+        // Segunda llamada para obtener superficie y año
+        try {
+          const rc = pc1 + pc2;
+          const url2 = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCallejero.asmx/Consulta_DNPRC_Rc?RefCatastral=${rc}`;
+          const res2 = await fetch(url2);
+          const xml2 = await res2.text();
+          const sup = getVal.call({ xml: xml2 }, 'sfc') || xml2.match(/<sfc[^>]*>([^<]*)<\/sfc>/)?.[1];
+          const ant = xml2.match(/<ant[^>]*>([^<]*)<\/ant>/)?.[1];
+          if (sup) datoscatastro.superficie = parseFloat(sup);
+          if (ant) datoscatastro.anyo = parseInt(ant);
+        } catch(e2) {
+          console.log('Detalle catastro no disponible:', e2.message);
+        }
       }
     } catch(e) {
       console.log('Catastro no disponible:', e.message);
