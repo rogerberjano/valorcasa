@@ -1152,7 +1152,9 @@ marker.bindPopup(`
 
     let datoscatastro = { referencia: null, anyo: null, superficie: null };
     try {
-      const catUrl = `/api/catastro?via=${encodeURIComponent(via)}&numero=${encodeURIComponent(numero)}&municipio=${encodeURIComponent(ciudadVal)}&provincia=${encodeURIComponent(ciudadVal)}`;
+      const lat = document.getElementById('latitud').value;
+const lon = document.getElementById('longitud').value;
+const catUrl = `/api/catastro?lat=${lat}&lon=${lon}`;
       const catRes = await fetch(catUrl);
       if (catRes.ok) {
         const catData = await catRes.json();
