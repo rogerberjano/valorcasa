@@ -1141,8 +1141,37 @@ marker.bindPopup(`
     document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
     document.getElementById('stepLoad1').classList.add('active');
     window.scrollTo(0,0);
-    await new Promise(r=>setTimeout(r,2000));
-    estado.catastro={referencia:'9872041CF3197C',anyo:1978,superficie:94};
+    // Extraer datos de la dirección seleccionada
+    const addrInput = document.getElementById('addr').value;
+    const ciudadVal = document.getElementById('ciudad').value || 'Barcelona';
+    
+    // Separar calle y número
+    const partes = addrInput.match(/^(.*?),?\s*(\d+)\s*$/);
+    const via = partes ? partes[1].trim() : addrInput;
+    const numero = partes ? partes[2] : '';
+
+    let datoscatastro = { referencia: null, anyo: null, superficie: null };
+    try {
+      const catUrl = `/api/catastro?via=${encodeURIComponent(via)}&numero=${encodeURIComponent(numero)}&municipio=${encodeURIComponent(ciudadVal)}&provincia=${encodeURIComponent(ciudadVal)}`;
+      const catRes = await fetch(catUrl);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        datoscatastro = {
+          referencia: catData.referencia_catastral,
+          anyo: catData.anyo_construccion,
+          superficie: catData.superficie_construida
+        };
+      }
+    } catch(e) {
+      console.log('Catastro no disponible, usando datos estimados');
+    }
+
+    // Si el Catastro no devuelve datos usamos estimados
+    estado.catastro = {
+      referencia: datoscatastro.referencia || 'No disponible',
+      anyo: datoscatastro.anyo || 1980,
+      superficie: datoscatastro.superficie || 90
+    };
     document.getElementById('c_anyo').textContent=estado.catastro.anyo;
     document.getElementById('c_sup').textContent=estado.catastro.superficie+' m²';
     document.getElementById('c_ref').textContent=estado.catastro.referencia;
