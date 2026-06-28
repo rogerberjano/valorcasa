@@ -1153,28 +1153,28 @@ marker.bindPopup(`
     let datoscatastro = { referencia: null, anyo: null, superficie: null };
     try {
       const lat = document.getElementById('latitud').value;
-const lon = document.getElementById('longitud').value;
-const catUrl = `/api/catastro?lat=${lat}&lon=${lon}`;
+      const lon = document.getElementById('longitud').value;
+      const catUrl = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCoordenadas.asmx/Consulta_RCCOOR?SRS=EPSG:4326&Coordenada_X=${lon}&Coordenada_Y=${lat}`;
       const catRes = await fetch(catUrl);
-      if (catRes.ok) {
-        const catData = await catRes.json();
-        datoscatastro = {
-          referencia: catData.referencia_catastral,
-          anyo: catData.anyo_construccion,
-          superficie: catData.superficie_construida
-        };
+      const xml = await catRes.text();
+      const getVal = (tag) => {
+        const match = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`));
+        return match ? match[1].trim() : null;
+      };
+      const pc1 = getVal('pc1');
+      const pc2 = getVal('pc2');
+      if (pc1 && pc2) {
+        datoscatastro.referencia = pc1 + pc2;
       }
     } catch(e) {
-      console.log('Catastro no disponible, usando datos estimados');
+      console.log('Catastro no disponible:', e.message);
     }
 
-    // Si el Catastro no devuelve datos usamos estimados
     estado.catastro = {
       referencia: datoscatastro.referencia || 'No disponible',
       anyo: datoscatastro.anyo || 1980,
       superficie: datoscatastro.superficie || 90
-    };
-    document.getElementById('c_anyo').textContent=estado.catastro.anyo;
+    };    document.getElementById('c_anyo').textContent=estado.catastro.anyo;
     document.getElementById('c_sup').textContent=estado.catastro.superficie+' m²';
     document.getElementById('c_ref').textContent=estado.catastro.referencia;
     document.getElementById('c_ciudad').textContent=document.getElementById('ciudad').value||'Barcelona';
