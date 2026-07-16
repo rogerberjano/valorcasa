@@ -1089,6 +1089,8 @@ marker.bindPopup(`
     document.getElementById('longitud').value=r.lon;
     document.getElementById('addrFoundText').textContent=[calle+num,cp,mun,a.state].filter(Boolean).join(', ');
     document.getElementById('addrFoundBox').classList.add('visible');
+    estado.barrio = a.suburb || a.neighbourhood || a.quarter || null;
+    estado.distrito = a.city_district || a.district || null;
     estado.addrSeleccionada=true;
     closeSuggestions();
   }
@@ -1195,29 +1197,42 @@ marker.bindPopup(`
     goStep('step1');
   }
 
-  function calcularValoracion() {
-    const sup=parseFloat(document.getElementById('sup_util').value)||80;
-    const anyo=estado.catastro.anyo||1980;
-    const reforma=document.getElementById('reforma').value;
-    const ascensor=document.getElementById('ascensor').value;
-    const parking=document.getElementById('parking').value;
-    const cp=document.getElementById('cp').value;
-    let base=3500;
-    if(cp.startsWith('08001')||cp.startsWith('08002'))base=5200;
-    else if(cp.startsWith('08003')||cp.startsWith('08004'))base=4800;
-    else if(cp.startsWith('08006')||cp.startsWith('08008'))base=4500;
-    else if(cp.startsWith('080'))base=3800;
-    let m=1;
-    if(reforma==='reciente')m+=0.12;else if(reforma==='1-5')m+=0.06;else if(reforma==='nunca')m-=0.08;
-    if(anyo>2000)m+=0.05;else if(anyo<1960)m-=0.05;
-    if(ascensor==='si')m+=0.03;
-    if(parking!=='no')m+=0.04;
-    if(['A','B'].includes(estado.cert))m+=0.04;
-    if(estado.cert==='G')m-=0.03;
-    const m2=Math.round(base*m);const medio=Math.round(sup*m2);
-    return{min:Math.round(medio*0.94),max:Math.round(medio*1.06),medio,m2,sup};
-  }
+  async function calcularValoracion() {
+    const sup = parseFloat(document.getElementById('sup_util').value) || 80;
+    const anyo = estado.catastro.anyo || 1980;
+    const reforma = document.getElementById('reforma').value;
+    const ascensor = document.getElementById('ascensor').value;
+    const parking = document.getElementById('parking').value;
+    const ciudad = document.getElementById('ciudad').value || 'Barcelona';
 
+    // Buscar precio real por barrio en Supabase
+    let precioBase = 4000;
+    try {
+      const barrio = estado.barrio || null;
+      const distrito = estado.distrito || null;
+      let query = db.from('precios_zona').select('precio_m2').eq('ciudad', ciudad);
+      if (barrio) query = query.eq('barrio', barrio);
+      else if (distrito) query = query.eq('distrito', distrito);
+      const { data } = await query.limit(1).single();
+      if (data && data.precio_m2) precioBase = data.precio_m2;
+    } catch(e) {
+      console.log('Precio zona no encontrado, usando estimado');
+    }
+
+    let m = 1;
+    if (reforma === 'reciente') m += 0.12;
+    else if (reforma === '1-5') m += 0.06;
+    else if (reforma === 'nunca') m -= 0.08;
+    if (anyo > 2000) m += 0.05; else if (anyo < 1960) m -= 0.05;
+    if (ascensor === 'si') m += 0.03;
+    if (parking !== 'no') m += 0.04;
+    if (['A','B'].includes(estado.cert)) m += 0.04;
+    if (estado.cert === 'G') m -= 0.03;
+
+    const m2 = Math.round(precioBase * m);
+    const medio = Math.round(sup * m2);
+    return { min: Math.round(medio * 0.94), max: Math.round(medio * 1.06), medio, m2, sup };
+  }
   function calcularScore() {
     let score=0;
     const motiv=estado.motiv,tl=estado.timeline,circ=document.getElementById('circunstancia').value;
@@ -1278,7 +1293,7 @@ marker.bindPopup(`
     ['ls1','ls2','ls3','ls4'].forEach((id,i)=>{document.getElementById(id).className='loading-step'+(i===0?' done':'');});
     await Promise.all([animarLoadingSteps(),new Promise(r=>setTimeout(r,3000))]);
 
-    const valor=calcularValoracion();
+    const valor=await calcularValoracion();
     const score=calcularScore();
     const comps=generarComparables(valor);
 
