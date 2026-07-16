@@ -379,7 +379,7 @@
             <div class="catastro-grid">
               <div class="cata-item"><div class="lbl">Año construcción</div><div class="val" id="c_anyo">—</div></div>
               <div class="cata-item"><div class="lbl">Sup. construida</div><div class="val" id="c_sup">—</div></div>
-              <div class="cata-item"><div class="lbl">Ref. catastral</div><div class="val" id="c_ref" style="font-size:11px">—</div></div>
+              <div class="cata-item" style="grid-column:1/-1"><div class="lbl">Ref. catastral · <a href="https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCBusqueda.aspx" target="_blank" style="color:var(--orange);text-decoration:none;">Consultar en Catastro →</a></div><div class="val" id="c_ref" style="font-size:11px">Introduce la referencia manualmente si la conoces</div></div>
               <div class="cata-item"><div class="lbl">Municipio</div><div class="val" id="c_ciudad">—</div></div>
             </div>
           </div>
@@ -1188,6 +1188,8 @@ marker.bindPopup(`
     };    document.getElementById('c_anyo').textContent=estado.catastro.anyo;
     document.getElementById('c_sup').textContent=estado.catastro.superficie+' m²';
     document.getElementById('c_ref').textContent=estado.catastro.referencia;
+    // Rellenar campos editables con datos del Catastro
+    document.getElementById('sup_util').value=Math.round(estado.catastro.superficie*0.87);
     document.getElementById('c_ciudad').textContent=document.getElementById('ciudad').value||'Barcelona';
     document.getElementById('sup_util').value=Math.round(estado.catastro.superficie*0.87);
     goStep('step1');
