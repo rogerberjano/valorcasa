@@ -1166,7 +1166,7 @@ marker.bindPopup(`
       if (pc1 && pc2) {
         datoscatastro.referencia = pc1 + pc2;
         try {
-          const url2 = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCallejero.asmx/Consulta_DNPRC_Rc?RefCatastral=${pc1}${pc2}&Municipio=&Provincia=`;?RefCatastral=${pc1+pc2}`;
+          const url2 = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCallejero.asmx/Consulta_DNPRC_Rc?RefCatastral=${pc1}${pc2}&Municipio=&Provincia=`;
           const res2 = await fetch(url2);
           const xml2 = await res2.text();
           const sup = getVal('sfc', xml2);
