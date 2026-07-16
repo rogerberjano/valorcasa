@@ -1157,26 +1157,24 @@ marker.bindPopup(`
       const catUrl = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCoordenadas.asmx/Consulta_RCCOOR?SRS=EPSG:4326&Coordenada_X=${lon}&Coordenada_Y=${lat}`;
       const catRes = await fetch(catUrl);
       const xml = await catRes.text();
-      const getVal = (tag) => {
-        const match = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`));
+      const getVal = (tag, src) => {
+        const match = src.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`));
         return match ? match[1].trim() : null;
       };
-      const pc1 = getVal('pc1');
-      const pc2 = getVal('pc2');
+      const pc1 = getVal('pc1', xml);
+      const pc2 = getVal('pc2', xml);
       if (pc1 && pc2) {
         datoscatastro.referencia = pc1 + pc2;
-        // Segunda llamada para obtener superficie y año
         try {
-          const rc = pc1 + pc2;
-          const url2 = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCallejero.asmx/Consulta_DNPRC_Rc?RefCatastral=${rc}`;
+          const url2 = `https://ovc.catastro.meh.es/ovcservweb/OVCSWLocalizacionRC/OVCCallejero.asmx/Consulta_DNPRC_Rc?RefCatastral=${pc1+pc2}`;
           const res2 = await fetch(url2);
           const xml2 = await res2.text();
-          const sup = getVal.call({ xml: xml2 }, 'sfc') || xml2.match(/<sfc[^>]*>([^<]*)<\/sfc>/)?.[1];
-          const ant = xml2.match(/<ant[^>]*>([^<]*)<\/ant>/)?.[1];
+          const sup = getVal('sfc', xml2);
+          const ant = getVal('ant', xml2);
           if (sup) datoscatastro.superficie = parseFloat(sup);
           if (ant) datoscatastro.anyo = parseInt(ant);
         } catch(e2) {
-          console.log('Detalle catastro no disponible:', e2.message);
+          console.log('Detalle no disponible:', e2.message);
         }
       }
     } catch(e) {
